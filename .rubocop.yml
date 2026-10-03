@@ -1,0 +1,5 @@
+# Omakase Ruby styling for Rails, then shared house style from evergreen
+inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+inherit_from: https://raw.githubusercontent.com/aaronmiler/evergreen/main/rubocop.yml
+
+# App-specific overrides go below

@@ -1,0 +1,31 @@
+# Dev/test connect to a local Postgres on localhost:5432 with postgres/postgres —
+# matching the `docker run` one-liner in the README. Override via .env if yours differs.
+#
+# CI and production provide DATABASE_URL, which Rails merges on top of these.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  # For details on connection pooling, see Rails configuration guide
+  # https://guides.rubyonrails.org/configuring.html#database-pooling
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("DATABASE_HOST", "localhost") %>
+  port: <%= ENV.fetch("DATABASE_PORT", 5432) %>
+  username: <%= ENV.fetch("DATABASE_USER", "postgres") %>
+  password: <%= ENV.fetch("DATABASE_PASSWORD", "postgres") %>
+
+development:
+  <<: *default
+  database: sapling_development
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+test:
+  <<: *default
+  database: sapling_test
+
+production:
+  <<: *default
+  # Connect via a single DATABASE_URL (host/user/password/db all in the URL):
+  #   postgres://user:PASSWORD@host:5432/sapling_production
+  url: <%= ENV["DATABASE_URL"] %>

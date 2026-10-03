@@ -1,0 +1,11 @@
+name: Gem Audit
+on:
+  schedule:
+    - cron: "0 16 * * 1" # Mondays 9am PT
+  workflow_dispatch:
+jobs:
+  audit:
+    uses: aaronmiler/evergreen/.github/workflows/gem-audit.yml@main
+    permissions:
+      contents: write
+      pull-requests: write

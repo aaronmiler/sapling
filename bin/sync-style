@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+# Pulls shared Prettier config from evergreen into a gitignored .prettierrc.json.
+# RuboCop follows evergreen on its own (remote inherit_from); Prettier can't, so
+# bin/setup (and therefore bin/ci) runs this to keep both on evergreen's main.
+
+require "net/http"
+
+URL = URI("https://raw.githubusercontent.com/aaronmiler/evergreen/main/prettier.json")
+TARGET = File.expand_path("../.prettierrc.json", __dir__)
+
+begin
+  response = Net::HTTP.get_response(URL)
+  raise "HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+
+  File.write(TARGET, response.body)
+  puts "Synced Prettier config from evergreen"
+rescue => e
+  # Offline with an existing copy is fine locally; no copy at all is not.
+  abort "Couldn't fetch #{URL} (#{e.message}) and no local .prettierrc.json exists" unless File.exist?(TARGET)
+  warn "Couldn't fetch #{URL} (#{e.message}); keeping existing .prettierrc.json"
+end

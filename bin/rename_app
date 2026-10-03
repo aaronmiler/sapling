@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+# One-shot bootstrap: renames this starter to a new app name, then deletes itself.
+#
+# Usage (after copying the starter into a new directory):
+#   cp -r sapling my_app && cd my_app && bin/rename_app my_app
+#
+# The placeholder "sapling" is one word, so its case alone can't say which form to
+# write. Context decides:
+#   Sapling  in .rb files -> PascalCase (module)    elsewhere -> Human Case (titles, docs)
+#   sapling  in package.json -> kebab-case          elsewhere -> snake_case (db, image tag)
+
+require "fileutils"
+require "pathname"
+
+APP_ROOT = File.expand_path("..", __dir__)
+
+new_name = ARGV[0]
+if new_name.nil? || new_name.strip.empty?
+  warn "Usage: bin/rename_app <new_app_name>  (e.g. bin/rename_app my_app)"
+  exit 1
+end
+
+unless new_name.match?(/\A[a-zA-Z][a-zA-Z0-9_\- ]*\z/)
+  warn "App name must start with a letter and contain only letters, digits, spaces, - or _."
+  exit 1
+end
+
+words = new_name.strip.split(/[\s_-]+/)
+snake = words.map(&:downcase).join("_")
+kebab = words.map(&:downcase).join("-")
+pascal = words.map(&:capitalize).join
+human = words.map(&:capitalize).join(" ")
+
+PLACEHOLDERS = %w[Sapling sapling].freeze
+
+def replacements_for(relative, pascal:, human:, snake:, kebab:)
+  {
+    "Sapling" => relative.end_with?(".rb") ? pascal : human,
+    "sapling" => relative == "package.json" ? kebab : snake,
+  }
+end
+
+skip_dirs = %w[.git node_modules frontend/node_modules tmp log storage vendor public/vite public/vite-dev public/vite-test]
+
+targets = Pathname.glob(File.join(APP_ROOT, "**", "*"), File::FNM_DOTMATCH).select do |path|
+  next false unless path.file?
+  relative = path.relative_path_from(APP_ROOT).to_s
+  next false if skip_dirs.any? { |dir| relative.start_with?("#{dir}/") }
+  next false if relative == "bin/rename_app"
+
+  begin
+    content = path.read
+  rescue ArgumentError, EncodingError
+    next false # binary file
+  end
+
+  PLACEHOLDERS.any? { |old| content.include?(old) }
+end
+
+if targets.empty?
+  puts "Nothing to rename — no occurrences of the starter's placeholder name found."
+else
+  targets.each do |path|
+    relative = path.relative_path_from(APP_ROOT).to_s
+    content = path.read
+    replacements_for(relative, pascal:, human:, snake:, kebab:).each { |old, new| content = content.gsub(old, new) }
+    path.write(content)
+    puts "Updated #{path.relative_path_from(APP_ROOT)}"
+  end
+  puts "\nRenamed starter to \"#{human}\" (module #{pascal}, db #{snake}_*, package #{kebab})."
+end
+
+puts "\nNext steps:"
+puts "  bin/setup   # installs dependencies, syncs style config, creates the new databases"
+
+FileUtils.rm_f(__FILE__)
+puts "\nRemoved bin/rename_app (one-shot script)."

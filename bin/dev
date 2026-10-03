@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Runs Rails + the Vite dev server together (see Procfile.dev).
+# foreman hands PORT to the first process (web); Vite takes its port from config/vite.json.
+export PORT="${PORT:-3000}"
+exec bundle exec foreman start -f Procfile.dev "$@"
