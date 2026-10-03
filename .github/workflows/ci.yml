@@ -90,6 +90,16 @@ jobs:
         with:
           bundler-cache: true
 
+      # Request specs render vite_javascript_tag, which auto-builds in test
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
+
       - name: Run tests
         env:
           RAILS_ENV: test
